@@ -98,13 +98,28 @@ class RemoteStorageBackend(StorageBackend):
         is_tencent_cos = "myqcloud.com" in endpoint_url.lower()
         signature_version = 's3' if is_tencent_cos else 's3v4'
 
-        s3_config = BotoConfig(
-            s3={
+        config_kwargs = {
+            "s3": {
+                # 阿里云 OSS 要求使用 virtual-hosted style
                 "addressing_style": "virtual",
+                # 避免部分 S3 兼容服务对 payload 签名 / chunked 的兼容性问题
                 "payload_signing_enabled": False,
             },
-            signature_version=signature_version,
-        )
+            "signature_version": signature_version,
+        }
+
+        # botocore 新版本默认会为支持 httpChecksum 的操作计算请求校验和（when_supported），
+        # 对 PutObject 可能会启用 aws-chunked + trailer checksum，OSS 会报：
+        # "aws-chunked encoding is not supported ..."
+        # 这里强制改为 when_required，避免自动启用 aws-chunked。
+        try:
+            s3_config = BotoConfig(
+                request_checksum_calculation="when_required",
+                **config_kwargs,
+            )
+        except TypeError:
+            # 兼容旧版 botocore（没有 request_checksum_calculation 参数）
+            s3_config = BotoConfig(**config_kwargs)
 
         client_kwargs = {
             "endpoint_url": endpoint_url,
