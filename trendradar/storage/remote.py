@@ -100,7 +100,7 @@ class RemoteStorageBackend(StorageBackend):
 
         s3_config = BotoConfig(
             s3={
-                "addressing_style": "path",
+                "addressing_style": "virtual",
                 "payload_signing_enabled": False,
             },
             signature_version=signature_version,
