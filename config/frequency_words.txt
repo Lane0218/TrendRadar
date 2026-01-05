@@ -16,6 +16,13 @@
 网红
 粉丝
 应援
+celebrity
+gossip
+entertainment
+idol
+dating
+divorce
+marriage
 
 [WORD_GROUPS]
 
@@ -27,6 +34,32 @@ HPC
 MPI
 OpenMP
 SYCL
+supercomputing
+supercomputer
+parallel computing
+性能优化
+向量化
+SIMD
+AVX
+SVE
+NUMA
+profiling
+benchmark
+latency
+throughput
+算力
+异构计算
+GPU计算
+CUDA
+ROCm
+OpenCL
+accelerator
+NVIDIA
+英伟达
+AMD
+GPU
+HBM
+NVLink
 
 编译器
 编译优化
@@ -34,26 +67,10 @@ LLVM
 Clang
 GCC
 JIT
-
-性能优化
-向量化
-SIMD
-AVX
-SVE
-NUMA
-
-算力
-异构计算
-GPU计算
-CUDA
-ROCm
-
-NVIDIA
-英伟达
-AMD
-GPU
-HBM
-NVLink
+compiler
+compiler optimization
+MLIR
+codegen
 
 人工智能
 AI
@@ -63,7 +80,19 @@ Transformer
 多模态
 MoE
 RAG
+foundation model
+diffusion
+reasoning
 
+AI编程
+vibe coding
+Copilot
+Cursor
+Cline
+Codex
+agentic
+code generation
+代码生成
 OpenAI
 ChatGPT
 Sora
@@ -73,15 +102,6 @@ Claude
 Gemini
 DeepMind
 
-vibe coding
-AI编程
-Copilot
-Cursor
-Cline
-Codex
-agentic
-代码生成
-
 自动驾驶
 Robotaxi
 FSD
@@ -90,20 +110,17 @@ NOA
 端到端
 激光雷达
 Lidar
+autonomous driving
+self-driving
+ADAS
 
 机器人
 人形机器人
 Humanoid
 具身智能
 Embodied
-
-芯片
-半导体
-NPU
-EDA
-光刻机
-EUV
-RISC-V
+robotics
+embodied AI
 
 Linux
 内核
@@ -134,3 +151,18 @@ G7
 关税
 出口管制
 选举
+geopolitics
+Taiwan
+Ukraine
+Russia
+Middle East
+Israel
+Gaza
+Iran
+North Korea
+EU
+NATO
+sanctions
+tariffs
+export controls
+election

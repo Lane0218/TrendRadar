@@ -152,6 +152,26 @@ def render_html_content(
                 padding: 24px;
             }
 
+            .content-section {
+                margin-bottom: 28px;
+            }
+
+            .content-section-title {
+                display: flex;
+                align-items: baseline;
+                gap: 10px;
+                margin: 0 0 18px 0;
+                font-size: 16px;
+                font-weight: 700;
+                color: #111827;
+            }
+
+            .content-section-subtitle {
+                font-size: 12px;
+                font-weight: 500;
+                color: #6b7280;
+            }
+
             .word-group {
                 margin-bottom: 40px;
             }
@@ -569,6 +589,14 @@ def render_html_content(
     if report_data["stats"]:
         total_count = len(report_data["stats"])
 
+        stats_html += f"""
+                <div class="content-section">
+                    <div class="content-section-title">
+                        📰 新闻
+                        <span class="content-section-subtitle">关键词筛选 · 共 {hot_news_count} 条</span>
+                    </div>
+                </div>"""
+
         for i, stat in enumerate(report_data["stats"], 1):
             count = stat["count"]
 
@@ -580,7 +608,10 @@ def render_html_content(
             else:
                 count_class = ""
 
-            escaped_word = html_escape(stat["word"])
+            # 关键词组名称可能是“多个关键词拼接”的长串，这里只展示第一个关键词
+            raw_word = stat.get("word", "")
+            first_keyword = raw_word.split()[0] if isinstance(raw_word, str) and raw_word.split() else raw_word
+            escaped_word = html_escape(first_keyword)
 
             stats_html += f"""
                 <div class="word-group">
@@ -675,7 +706,7 @@ def render_html_content(
         rss_total_items = sum(len(stat.get("titles", [])) for stat in rss_stats)
         rss_stats_html += f"""
                 <div class="rss-section">
-                    <div class="rss-section-title">📝 个人博客订阅 (共 {rss_total_items} 条)</div>"""
+                    <div class="rss-section-title">📝 博客 </div>"""
 
         total_count = len(rss_stats)
         for i, stat in enumerate(rss_stats, 1):

@@ -7,6 +7,7 @@ TrendRadar 主程序
 """
 
 import os
+import sqlite3
 import webbrowser
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
@@ -126,6 +127,120 @@ class NewsAnalyzer:
 
         if self.is_github_actions:
             self._check_version_update()
+
+    def _get_enabled_rss_feed_ids(self) -> set:
+        enabled_ids = set()
+        for feed_cfg in self.ctx.rss_feeds or []:
+            feed_id = (feed_cfg.get("id") or "").strip()
+            if not feed_id:
+                continue
+            if feed_cfg.get("enabled", True) is False:
+                continue
+            enabled_ids.add(feed_id)
+        return enabled_ids
+
+    def _filter_pushed_rss_items(self, rss_items: List[Dict]) -> List[Dict]:
+        """
+        RSS 推送去重（A1）：已经推送过的 URL 不再重复推送。
+
+        说明：
+        - 仅影响“推送/报告展示”的 RSS 条目，不影响 RSS 数据落库
+        - 去重粒度：(feed_id, url)
+        """
+        if not rss_items:
+            return rss_items
+
+        backend = self.storage_manager.get_backend()
+        get_db_path = getattr(backend, "get_rss_push_state_db_path", None)
+        if not callable(get_db_path):
+            return rss_items
+
+        try:
+            db_path = get_db_path()
+            conn = sqlite3.connect(str(db_path))
+            try:
+                cursor = conn.cursor()
+
+                filtered = []
+                skipped = 0
+                for item in rss_items:
+                    feed_id = (item.get("feed_id") or "").strip()
+                    url = (item.get("url") or "").strip()
+                    if not feed_id or not url:
+                        filtered.append(item)
+                        continue
+
+                    cursor.execute(
+                        "SELECT 1 FROM rss_pushed_items WHERE feed_id = ? AND url = ? LIMIT 1",
+                        (feed_id, url),
+                    )
+                    if cursor.fetchone():
+                        skipped += 1
+                        continue
+                    filtered.append(item)
+
+                if skipped > 0:
+                    print(f"[RSS] 推送去重：跳过 {skipped} 条已推送条目")
+
+                return filtered
+            finally:
+                conn.close()
+        except Exception as e:
+            print(f"[RSS] 推送去重失败: {e}")
+            return rss_items
+
+    def _record_pushed_rss_items(self, rss_stats: Optional[List[Dict]]) -> None:
+        """
+        记录本次已推送的 RSS 条目，供后续运行去重。
+
+        Args:
+            rss_stats: _process_rss_data_by_mode 返回的 rss_stats（统计结构），包含 titles 列表
+        """
+        if not rss_stats:
+            return
+
+        backend = self.storage_manager.get_backend()
+        get_db_path = getattr(backend, "get_rss_push_state_db_path", None)
+        upload_db = getattr(backend, "upload_rss_push_state_db", None)
+        if not callable(get_db_path):
+            return
+
+        now_str = self.ctx.get_time().strftime("%Y-%m-%d %H:%M:%S")
+        inserted = 0
+
+        try:
+            db_path = get_db_path()
+            conn = sqlite3.connect(str(db_path))
+            try:
+                cursor = conn.cursor()
+                for stat in rss_stats:
+                    for title_data in stat.get("titles", []) or []:
+                        feed_id = (title_data.get("feed_id") or "").strip()
+                        url = (title_data.get("url") or "").strip()
+                        if not feed_id or not url:
+                            continue
+
+                        cursor.execute(
+                            "INSERT OR IGNORE INTO rss_pushed_items (feed_id, url, pushed_at) VALUES (?, ?, ?)",
+                            (feed_id, url, now_str),
+                        )
+                        if cursor.rowcount:
+                            inserted += 1
+
+                conn.commit()
+            finally:
+                conn.close()
+
+            if inserted > 0:
+                print(f"[RSS] 推送去重：已记录 {inserted} 条已推送条目")
+
+            if callable(upload_db):
+                if upload_db():
+                    print("[RSS] 推送去重：状态库已同步到存储后端")
+                else:
+                    print("[RSS] 推送去重：状态库同步失败（下次可能重复推送）")
+        except Exception as e:
+            print(f"[RSS] 推送去重：记录失败: {e}")
 
     def _init_storage_manager(self) -> None:
         """初始化存储管理器（使用 AppContext）"""
@@ -422,6 +537,10 @@ class NewsAnalyzer:
             if not results:
                 print("未配置任何通知渠道，跳过通知发送")
                 return False
+
+            # RSS A1：只要本次成功推送（任一渠道成功），就记录本次“已推送的 RSS 条目”
+            if rss_items and any(results.values()):
+                self._record_pushed_rss_items(rss_items)
 
             # 如果成功发送了任何通知，且启用了每天只推一次，则记录推送
             if (
@@ -1034,6 +1153,7 @@ class NewsAnalyzer:
         """将 RSS 条目字典转换为列表格式，并应用新鲜度过滤（用于推送）"""
         rss_items = []
         filtered_count = 0
+        skipped_feed_count = 0
 
         # 获取新鲜度过滤配置
         rss_config = self.ctx.rss_config
@@ -1053,7 +1173,14 @@ class NewsAnalyzer:
                 except (ValueError, TypeError):
                     pass
 
+        enabled_feed_ids = self._get_enabled_rss_feed_ids()
+
         for feed_id, items in items_dict.items():
+            # 跳过“已移除/已禁用/未配置”的 RSS 源（避免历史残留数据继续出现在报告中）
+            if enabled_feed_ids and feed_id not in enabled_feed_ids:
+                skipped_feed_count += 1
+                continue
+
             # 确定此 feed 的 max_age_days
             max_days = feed_max_age_map.get(feed_id)
             if max_days is None:
@@ -1080,7 +1207,11 @@ class NewsAnalyzer:
         if filtered_count > 0:
             print(f"[RSS] 新鲜度过滤：跳过 {filtered_count} 篇超过指定天数的旧文章（仍保留在数据库中）")
 
-        return rss_items
+        if skipped_feed_count > 0:
+            print(f"[RSS] 跳过 {skipped_feed_count} 个已禁用/未配置的 RSS 源（历史残留数据）")
+
+        # A1：已推送过的不再重复推送
+        return self._filter_pushed_rss_items(rss_items)
 
     def _filter_rss_by_keywords(self, rss_items: List[Dict]) -> List[Dict]:
         """使用 frequency_words.txt 过滤 RSS 条目"""

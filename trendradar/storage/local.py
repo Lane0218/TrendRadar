@@ -148,6 +148,48 @@ class LocalStorageBackend(StorageBackend):
 
         conn.commit()
 
+    def _init_rss_push_state_tables(self, conn: sqlite3.Connection) -> None:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS rss_pushed_items (
+                feed_id TEXT NOT NULL,
+                url TEXT NOT NULL,
+                pushed_at TEXT NOT NULL,
+                PRIMARY KEY (feed_id, url)
+            )
+            """
+        )
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_rss_pushed_at
+            ON rss_pushed_items(pushed_at)
+            """
+        )
+        conn.commit()
+
+    def get_rss_push_state_db_path(self) -> Path:
+        """
+        获取 RSS 推送状态库路径（用于“已推送不重复推送”）。
+
+        本地后端：持久化到 output/rss/push_state.db
+        """
+        db_dir = self.data_dir / "rss"
+        db_dir.mkdir(parents=True, exist_ok=True)
+        db_path = db_dir / "push_state.db"
+
+        conn = sqlite3.connect(str(db_path))
+        try:
+            self._init_rss_push_state_tables(conn)
+        finally:
+            conn.close()
+
+        return db_path
+
+    def upload_rss_push_state_db(self) -> bool:
+        """本地后端无需上传，保持接口一致。"""
+        return True
+
     def save_news_data(self, data: NewsData) -> bool:
         """
         保存新闻数据到 SQLite（以 URL 为唯一标识，支持标题更新检测）

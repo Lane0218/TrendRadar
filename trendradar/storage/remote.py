@@ -213,6 +213,132 @@ class RemoteStorageBackend(StorageBackend):
             print(f"[远程存储] 检查对象存在性异常 ({r2_key}): {e}")
             return False
 
+    def _download_object(self, r2_key: str, local_path: Path) -> Optional[Path]:
+        """
+        下载任意对象到本地路径（用于非按日期命名的辅助文件）。
+
+        Args:
+            r2_key: 远程对象键
+            local_path: 本地保存路径
+
+        Returns:
+            本地文件路径；若远程对象不存在则返回 None
+        """
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if not self._check_object_exists(r2_key):
+            return None
+
+        try:
+            response = self.s3_client.get_object(Bucket=self.bucket_name, Key=r2_key)
+            with open(local_path, "wb") as f:
+                for chunk in response["Body"].iter_chunks(chunk_size=1024 * 1024):
+                    f.write(chunk)
+            self._downloaded_files.append(local_path)
+            print(f"[远程存储] 已下载: {r2_key} -> {local_path}")
+            return local_path
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "")
+            if error_code in ("404", "NoSuchKey", "Not Found"):
+                return None
+            print(f"[远程存储] 下载失败 (错误码: {error_code}): {e}")
+            raise
+
+    def _upload_object(self, local_path: Path, r2_key: str, content_type: str = "application/octet-stream") -> bool:
+        """
+        上传任意本地文件到远程对象存储（用于非按日期命名的辅助文件）。
+
+        Args:
+            local_path: 本地文件路径
+            r2_key: 远程对象键
+            content_type: ContentType
+
+        Returns:
+            是否上传成功
+        """
+        if not local_path.exists():
+            print(f"[远程存储] 本地文件不存在，无法上传: {local_path}")
+            return False
+
+        try:
+            local_size = local_path.stat().st_size
+            print(f"[远程存储] 准备上传: {local_path} ({local_size} bytes) -> {r2_key}")
+
+            with open(local_path, "rb") as f:
+                file_content = f.read()
+
+            self.s3_client.put_object(
+                Bucket=self.bucket_name,
+                Key=r2_key,
+                Body=file_content,
+                ContentLength=local_size,
+                ContentType=content_type,
+            )
+            print(f"[远程存储] 已上传: {local_path} -> {r2_key}")
+
+            if self._check_object_exists(r2_key):
+                print(f"[远程存储] 上传验证成功: {r2_key}")
+                return True
+            print(f"[远程存储] 上传验证失败: 文件未在远程存储中找到")
+            return False
+        except Exception as e:
+            print(f"[远程存储] 上传失败: {e}")
+            return False
+
+    def _get_rss_push_state_key(self) -> str:
+        return "rss/push_state.db"
+
+    def _get_local_rss_push_state_path(self) -> Path:
+        path = self.temp_dir / "rss" / "push_state.db"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def _init_rss_push_state_tables(self, conn: sqlite3.Connection) -> None:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS rss_pushed_items (
+                feed_id TEXT NOT NULL,
+                url TEXT NOT NULL,
+                pushed_at TEXT NOT NULL,
+                PRIMARY KEY (feed_id, url)
+            )
+            """
+        )
+        cursor.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_rss_pushed_at
+            ON rss_pushed_items(pushed_at)
+            """
+        )
+        conn.commit()
+
+    def get_rss_push_state_db_path(self) -> Path:
+        """
+        获取 RSS 推送状态库路径（用于“已推送不重复推送”）。
+
+        远程后端：对象键固定为 rss/push_state.db，运行时下载到临时目录。
+        """
+        local_path = self._get_local_rss_push_state_path()
+
+        if not local_path.exists():
+            downloaded = self._download_object(self._get_rss_push_state_key(), local_path)
+            if downloaded is None:
+                print(f"[远程存储] 推送状态库不存在，将创建新库: {self._get_rss_push_state_key()}")
+
+        conn = sqlite3.connect(str(local_path))
+        try:
+            self._init_rss_push_state_tables(conn)
+        finally:
+            conn.close()
+
+        return local_path
+
+    def upload_rss_push_state_db(self) -> bool:
+        """上传 RSS 推送状态库到远程存储（rss/push_state.db）。"""
+        local_path = self._get_local_rss_push_state_path()
+        return self._upload_object(local_path, self._get_rss_push_state_key(), content_type="application/x-sqlite3")
+
     def _download_sqlite(self, date: Optional[str] = None, db_type: str = "news") -> Optional[Path]:
         """
         从远程存储下载当天的 SQLite 文件到本地临时目录
