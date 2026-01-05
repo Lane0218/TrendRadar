@@ -735,6 +735,47 @@ class NewsAnalyzer:
         except FileNotFoundError:
             word_groups, filter_words, global_filters = [], [], []
 
+        # RSS 源级别关键词筛选控制：
+        # - 默认：filter_by_keywords=true（走 frequency_words.txt 筛选）
+        # - 个人博客等信息量较小的源：filter_by_keywords=false（全量推送，但仍受 GLOBAL_FILTER 过滤）
+        feeds_cfg = {f.get("id"): f for f in self.ctx.rss_feeds if f.get("id")}
+        no_keyword_filter_feed_ids = {
+            feed_id
+            for feed_id, feed_cfg in feeds_cfg.items()
+            if feed_cfg.get("filter_by_keywords") is False
+        }
+
+        # “全量推送”源使用一个“匹配全部标题”的虚拟词组，便于复用统计/渲染逻辑
+        unfiltered_word_groups = [
+            {
+                "required": [],
+                "normal": [],
+                "group_key": "个人博客更新",
+                "max_count": 0,
+            }
+        ]
+
+        def split_items_by_filter_setting(items: Optional[List[Dict]]) -> Tuple[List[Dict], List[Dict]]:
+            """
+            将 RSS 条目按是否需要关键词筛选拆分：
+            - returned[0] = 需要关键词筛选的条目
+            - returned[1] = 全量推送（不做关键词筛选）的条目
+            """
+            if not items:
+                return [], []
+
+            keyword_items: List[Dict] = []
+            unfiltered_items: List[Dict] = []
+
+            for item in items:
+                feed_id = item.get("feed_id", "")
+                if feed_id in no_keyword_filter_feed_ids:
+                    unfiltered_items.append(item)
+                else:
+                    keyword_items.append(item)
+
+            return keyword_items, unfiltered_items
+
         timezone = self.ctx.timezone
         max_news_per_keyword = self.ctx.config.get("MAX_NEWS_PER_KEYWORD", 0)
         sort_by_position_first = self.ctx.config.get("SORT_BY_POSITION_FIRST", False)
@@ -757,20 +798,46 @@ class NewsAnalyzer:
                 print("[RSS] 增量模式：没有新增 RSS 条目")
                 return None, None
 
-            rss_stats, total = count_rss_frequency(
-                rss_items=new_items_list,
-                word_groups=word_groups,
-                filter_words=filter_words,
-                global_filters=global_filters,
-                new_items=new_items_list,  # 增量模式所有都是新增
-                max_news_per_keyword=max_news_per_keyword,
-                sort_by_position_first=sort_by_position_first,
-                timezone=timezone,
-                rank_threshold=self.rank_threshold,
-                quiet=False,
-            )
+            keyword_new_items, unfiltered_new_items = split_items_by_filter_setting(new_items_list)
+
+            rss_stats = []
+
+            # 1) 关键词筛选源：按 frequency_words.txt 过滤
+            if keyword_new_items:
+                keyword_stats, _ = count_rss_frequency(
+                    rss_items=keyword_new_items,
+                    word_groups=word_groups,
+                    filter_words=filter_words,
+                    global_filters=global_filters,
+                    new_items=keyword_new_items,  # 增量模式所有都是新增
+                    max_news_per_keyword=max_news_per_keyword,
+                    sort_by_position_first=sort_by_position_first,
+                    timezone=timezone,
+                    rank_threshold=self.rank_threshold,
+                    quiet=False,
+                )
+                if keyword_stats:
+                    rss_stats.extend(keyword_stats)
+
+            # 2) 全量推送源：不做关键词筛选（仍受 GLOBAL_FILTER 影响）
+            if unfiltered_new_items:
+                unfiltered_stats, _ = count_rss_frequency(
+                    rss_items=unfiltered_new_items,
+                    word_groups=unfiltered_word_groups,
+                    filter_words=[],
+                    global_filters=global_filters,
+                    new_items=unfiltered_new_items,
+                    max_news_per_keyword=0,  # 全量推送源不限制数量
+                    sort_by_position_first=True,  # 单组，无所谓；固定顺序更稳定
+                    timezone=timezone,
+                    rank_threshold=self.rank_threshold,
+                    quiet=False,
+                )
+                if unfiltered_stats:
+                    rss_stats.extend(unfiltered_stats)
+
             if not rss_stats:
-                print("[RSS] 增量模式：关键词匹配后没有内容")
+                print("[RSS] 增量模式：过滤后没有内容")
                 return None, None
 
         elif self.report_mode == "current":
@@ -781,36 +848,88 @@ class NewsAnalyzer:
                 return None, None
 
             all_items_list = self._convert_rss_items_to_list(latest_data.items, latest_data.id_to_name)
-            rss_stats, total = count_rss_frequency(
-                rss_items=all_items_list,
-                word_groups=word_groups,
-                filter_words=filter_words,
-                global_filters=global_filters,
-                new_items=new_items_list,  # 标记新增
-                max_news_per_keyword=max_news_per_keyword,
-                sort_by_position_first=sort_by_position_first,
-                timezone=timezone,
-                rank_threshold=self.rank_threshold,
-                quiet=False,
-            )
-            if not rss_stats:
-                print("[RSS] 当前榜单模式：关键词匹配后没有内容")
-                return None, None
 
-            # 生成新增统计
-            if new_items_list:
-                rss_new_stats, _ = count_rss_frequency(
-                    rss_items=new_items_list,
+            keyword_all_items, unfiltered_all_items = split_items_by_filter_setting(all_items_list)
+            keyword_new_items, unfiltered_new_items = split_items_by_filter_setting(new_items_list)
+
+            rss_stats = []
+
+            # 1) 关键词筛选源：按 frequency_words.txt 过滤
+            if keyword_all_items:
+                keyword_stats, _ = count_rss_frequency(
+                    rss_items=keyword_all_items,
                     word_groups=word_groups,
                     filter_words=filter_words,
                     global_filters=global_filters,
-                    new_items=new_items_list,
+                    new_items=keyword_new_items,  # 标记新增
                     max_news_per_keyword=max_news_per_keyword,
                     sort_by_position_first=sort_by_position_first,
                     timezone=timezone,
                     rank_threshold=self.rank_threshold,
-                    quiet=True,
+                    quiet=False,
                 )
+                if keyword_stats:
+                    rss_stats.extend(keyword_stats)
+
+            # 2) 全量推送源：不做关键词筛选（仍受 GLOBAL_FILTER 影响）
+            if unfiltered_all_items:
+                unfiltered_stats, _ = count_rss_frequency(
+                    rss_items=unfiltered_all_items,
+                    word_groups=unfiltered_word_groups,
+                    filter_words=[],
+                    global_filters=global_filters,
+                    new_items=unfiltered_new_items,
+                    max_news_per_keyword=0,
+                    sort_by_position_first=True,
+                    timezone=timezone,
+                    rank_threshold=self.rank_threshold,
+                    quiet=False,
+                )
+                if unfiltered_stats:
+                    rss_stats.extend(unfiltered_stats)
+
+            if not rss_stats:
+                print("[RSS] 当前榜单模式：过滤后没有内容")
+                return None, None
+
+            # 生成新增统计
+            if new_items_list:
+                rss_new_stats = []
+
+                if keyword_new_items:
+                    keyword_new_stats, _ = count_rss_frequency(
+                        rss_items=keyword_new_items,
+                        word_groups=word_groups,
+                        filter_words=filter_words,
+                        global_filters=global_filters,
+                        new_items=keyword_new_items,
+                        max_news_per_keyword=max_news_per_keyword,
+                        sort_by_position_first=sort_by_position_first,
+                        timezone=timezone,
+                        rank_threshold=self.rank_threshold,
+                        quiet=True,
+                    )
+                    if keyword_new_stats:
+                        rss_new_stats.extend(keyword_new_stats)
+
+                if unfiltered_new_items:
+                    unfiltered_new_stats, _ = count_rss_frequency(
+                        rss_items=unfiltered_new_items,
+                        word_groups=unfiltered_word_groups,
+                        filter_words=[],
+                        global_filters=global_filters,
+                        new_items=unfiltered_new_items,
+                        max_news_per_keyword=0,
+                        sort_by_position_first=True,
+                        timezone=timezone,
+                        rank_threshold=self.rank_threshold,
+                        quiet=True,
+                    )
+                    if unfiltered_new_stats:
+                        rss_new_stats.extend(unfiltered_new_stats)
+
+                if not rss_new_stats:
+                    rss_new_stats = None
 
         else:
             # daily 模式：统计=当天所有条目
@@ -820,36 +939,88 @@ class NewsAnalyzer:
                 return None, None
 
             all_items_list = self._convert_rss_items_to_list(all_data.items, all_data.id_to_name)
-            rss_stats, total = count_rss_frequency(
-                rss_items=all_items_list,
-                word_groups=word_groups,
-                filter_words=filter_words,
-                global_filters=global_filters,
-                new_items=new_items_list,  # 标记新增
-                max_news_per_keyword=max_news_per_keyword,
-                sort_by_position_first=sort_by_position_first,
-                timezone=timezone,
-                rank_threshold=self.rank_threshold,
-                quiet=False,
-            )
-            if not rss_stats:
-                print("[RSS] 当日汇总模式：关键词匹配后没有内容")
-                return None, None
 
-            # 生成新增统计
-            if new_items_list:
-                rss_new_stats, _ = count_rss_frequency(
-                    rss_items=new_items_list,
+            keyword_all_items, unfiltered_all_items = split_items_by_filter_setting(all_items_list)
+            keyword_new_items, unfiltered_new_items = split_items_by_filter_setting(new_items_list)
+
+            rss_stats = []
+
+            # 1) 关键词筛选源：按 frequency_words.txt 过滤
+            if keyword_all_items:
+                keyword_stats, _ = count_rss_frequency(
+                    rss_items=keyword_all_items,
                     word_groups=word_groups,
                     filter_words=filter_words,
                     global_filters=global_filters,
-                    new_items=new_items_list,
+                    new_items=keyword_new_items,  # 标记新增
                     max_news_per_keyword=max_news_per_keyword,
                     sort_by_position_first=sort_by_position_first,
                     timezone=timezone,
                     rank_threshold=self.rank_threshold,
-                    quiet=True,
+                    quiet=False,
                 )
+                if keyword_stats:
+                    rss_stats.extend(keyword_stats)
+
+            # 2) 全量推送源：不做关键词筛选（仍受 GLOBAL_FILTER 影响）
+            if unfiltered_all_items:
+                unfiltered_stats, _ = count_rss_frequency(
+                    rss_items=unfiltered_all_items,
+                    word_groups=unfiltered_word_groups,
+                    filter_words=[],
+                    global_filters=global_filters,
+                    new_items=unfiltered_new_items,
+                    max_news_per_keyword=0,
+                    sort_by_position_first=True,
+                    timezone=timezone,
+                    rank_threshold=self.rank_threshold,
+                    quiet=False,
+                )
+                if unfiltered_stats:
+                    rss_stats.extend(unfiltered_stats)
+
+            if not rss_stats:
+                print("[RSS] 当日汇总模式：过滤后没有内容")
+                return None, None
+
+            # 生成新增统计
+            if new_items_list:
+                rss_new_stats = []
+
+                if keyword_new_items:
+                    keyword_new_stats, _ = count_rss_frequency(
+                        rss_items=keyword_new_items,
+                        word_groups=word_groups,
+                        filter_words=filter_words,
+                        global_filters=global_filters,
+                        new_items=keyword_new_items,
+                        max_news_per_keyword=max_news_per_keyword,
+                        sort_by_position_first=sort_by_position_first,
+                        timezone=timezone,
+                        rank_threshold=self.rank_threshold,
+                        quiet=True,
+                    )
+                    if keyword_new_stats:
+                        rss_new_stats.extend(keyword_new_stats)
+
+                if unfiltered_new_items:
+                    unfiltered_new_stats, _ = count_rss_frequency(
+                        rss_items=unfiltered_new_items,
+                        word_groups=unfiltered_word_groups,
+                        filter_words=[],
+                        global_filters=global_filters,
+                        new_items=unfiltered_new_items,
+                        max_news_per_keyword=0,
+                        sort_by_position_first=True,
+                        timezone=timezone,
+                        rank_threshold=self.rank_threshold,
+                        quiet=True,
+                    )
+                    if unfiltered_new_stats:
+                        rss_new_stats.extend(unfiltered_new_stats)
+
+                if not rss_new_stats:
+                    rss_new_stats = None
 
         return rss_stats, rss_new_stats
 

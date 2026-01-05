@@ -24,10 +24,6 @@ app:
 # name: 显示名称（可自定义，修改后不影响运行）
 # ===============================================================
 platforms:
-  - id: "toutiao"
-    name: "今日头条"
-  - id: "baidu"
-    name: "百度热搜"
   - id: "wallstreetcn-hot"
     name: "华尔街见闻"
   - id: "thepaper"
@@ -38,12 +34,6 @@ platforms:
     name: "财联社热门"
   - id: "ifeng"
     name: "凤凰网"
-  - id: "tieba"
-    name: "贴吧"
-  - id: "weibo"
-    name: "微博"
-  - id: "douyin"
-    name: "抖音"
   - id: "zhihu"
     name: "知乎"
 
@@ -80,15 +70,143 @@ rss:
   # - 正整数：覆盖全局设置，只推送此天数内的文章
   # - 0：禁用此频道的新鲜度过滤，推送所有文章
   feeds:
-    - id: "hacker-news"
-      name: "Hacker News"
-      url: "https://hnrss.org/frontpage"
-      # max_age_days: 1               # 示例：只推送1天内的文章
 
+    # 新闻媒体 / 开源资讯
+    - id: "github-blog"
+      name: "GitHub Blog"
+      url: "https://github.blog/feed/"
+      filter_by_keywords: true
+
+    - id: "github-changelog"
+      name: "GitHub Changelog"
+      url: "https://github.blog/changelog/feed/"
+      filter_by_keywords: true
+
+    - id: "bbc-news"
+      name: "BBC News - Top Stories"
+      url: "https://feeds.bbci.co.uk/news/rss.xml"
+      filter_by_keywords: true
+
+    - id: "bbc-tech"
+      name: "BBC News - Technology"
+      url: "https://feeds.bbci.co.uk/news/technology/rss.xml"
+      filter_by_keywords: true
+
+    - id: "reuters-top"
+      name: "Reuters - Top News"
+      url: "https://cdn.feedcontrol.net/8/1114-wioSIX3uu8MEj.xml"
+      filter_by_keywords: true
+
+    - id: "reuters-world"
+      name: "Reuters - World News"
+      url: "https://cdn.feedcontrol.net/8/1115-TvWAhu4G064WT.xml"
+      filter_by_keywords: true
+
+    - id: "washingtonpost-world"
+      name: "The Washington Post - World"
+      url: "https://feeds.washingtonpost.com/rss/world"
+      filter_by_keywords: true
+
+    - id: "washingtonpost-politics"
+      name: "The Washington Post - Politics"
+      url: "https://feeds.washingtonpost.com/rss/politics"
+      filter_by_keywords: true
+
+    - id: "xinhua-world"
+      name: "Xinhua - World"
+      url: "http://www.xinhuanet.com/english/rss/worldrss.xml"
+      filter_by_keywords: true
+
+    - id: "xinhua-sci-tech"
+      name: "Xinhua - Sci & Tech"
+      url: "http://www.xinhuanet.com/english/rss/scirss.xml"
+      filter_by_keywords: true
+
+    # OPML 导入（个人订阅源）
     - id: "ruanyifeng"
       name: "阮一峰的网络日志"
       url: "http://www.ruanyifeng.com/blog/atom.xml"
-      # max_age_days: 7               # 示例：推送7天内的文章（更新较慢的博客）
+      filter_by_keywords: false        # 个人博客：全量推送（仍受全局过滤词影响）
+
+    - id: "lawtee"
+      name: "老T博客"
+      url: "https://lawtee.com/index.xml"
+      filter_by_keywords: false    
+
+    - id: "cnbang"
+      name: "bang's blog"
+      url: "https://blog.cnbang.net/feed/"
+      filter_by_keywords: false
+
+    - id: "abnerhexu"
+      name: "Abnerhexu's Blog"
+      url: "https://hexu.shahe.org/rss.xml"
+      filter_by_keywords: false
+
+    - id: "yuanji"
+      name: "元吉的博客"
+      url: "https://blog.yuanji.dev/index.xml"
+      filter_by_keywords: false
+
+    - id: "laneljc"
+      name: "Lane's Blog"
+      url: "https://www.laneljc.cn/rss.xml"
+      filter_by_keywords: false
+
+    - id: "zzbd"
+      name: "J.F's BLOG"
+      url: "https://blog.zzbd.org/atom.xml"
+      filter_by_keywords: false
+
+    - id: "zhheo"
+      name: "张洪Heo"
+      url: "https://blog.zhheo.com/rss.xml"
+      filter_by_keywords: false
+
+    - id: "blatr"
+      name: "青灯暮雨"
+      url: "https://www.blatr.cn/api/v1/subscribe/rss"
+      filter_by_keywords: false
+
+    - id: "cworld0"
+      name: "CWorld Site"
+      url: "https://cworld0.com/rss.xml"
+      filter_by_keywords: false
+
+    - id: "kzhik"
+      name: "kzhik's website"
+      url: "https://www.kzhik.cn/resources/rss.xml"
+      filter_by_keywords: false
+
+    - id: "veryjack"
+      name: "Jack's Space"
+      url: "https://veryjack.com/feed/"
+      filter_by_keywords: false
+
+    - id: "arthals"
+      name: "Arthals' ink"
+      url: "https://arthals.ink/rss.xml"
+      filter_by_keywords: false
+
+    - id: "cusox"
+      name: "Cusox の Blog"
+      url: "https://blog.cusox.net/index.xml"
+      filter_by_keywords: false
+
+    - id: "pak"
+      name: "Pak"
+      url: "https://blog.yixuan-wang.site/feed.xml"
+      filter_by_keywords: false
+
+    - id: "ilogs"
+      name: "我的日志"
+      url: "https://ilogs.cn/feed/"
+      filter_by_keywords: false
+
+    - id: "imqi1"
+      name: "ImQi1"
+      url: "https://imqi1.com/feed/"
+      filter_by_keywords: false
 
     # 自定义源示例
     # - id: "custom-feed"
@@ -117,7 +235,7 @@ rss:
 #    • 适用场景：避免重复信息干扰
 # ===============================================================
 report:
-  mode: "current"                     # 可选: daily | current | incremental
+  mode: "daily"                       # 可选: daily | current | incremental
   rank_threshold: 5                   # 排名高亮阈值
   sort_by_position_first: false       # true=按配置位置排序，false=按热点条数排序
   max_news_per_keyword: 0             # 每个关键词最大显示数量（0=不限制）
@@ -155,9 +273,9 @@ notification:
   # 注意：GitHub Actions 执行时间不稳定，时间范围建议至少留足 2 小时
   #       如果想要精准的定时推送，建议使用 Docker 部署在个人服务器上
   push_window:
-    enabled: false                    # 是否启用推送时间窗口控制
-    start: "20:00"                    # 开始时间（北京时间）
-    end: "22:00"                      # 结束时间（北京时间）
+    enabled: true                     # 是否启用推送时间窗口控制
+    start: "07:00"                    # 开始时间（北京时间）
+    end: "07:30"                      # 结束时间（北京时间）
     once_per_day: true                # true=窗口内只推送一次，false=窗口内每次执行都推送
 
   # 推送渠道配置
@@ -234,7 +352,7 @@ storage:
   # 数据拉取配置（从远程同步到本地）
   # 用于 MCP Server 等场景：爬虫存到远程，MCP 拉取到本地分析
   pull:
-    enabled: false                    # 是否启用启动时自动拉取
+    enabled: false                    # 是否启用启动时自动拉取（你不使用 MCP，可关闭）
     days: 7                           # 拉取最近 N 天的数据
 
 
