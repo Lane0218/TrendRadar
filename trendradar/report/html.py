@@ -736,7 +736,7 @@ def render_html_content(
         rss_total_items = sum(len(stat.get("titles", [])) for stat in rss_stats)
         rss_stats_html += f"""
                 <div class="rss-section">
-                    <div class="rss-section-title">📰 RSS 订阅统计 (共 {rss_total_items} 条)</div>"""
+                    <div class="rss-section-title">📝 个人博客更新 (共 {rss_total_items} 条)</div>"""
 
         total_count = len(rss_stats)
         for i, stat in enumerate(rss_stats, 1):
@@ -770,8 +770,11 @@ def render_html_content(
                         <div class="news-item {new_class}">
                             <div class="news-number">{j}</div>
                             <div class="news-content">
-                                <div class="news-header">
-                                    <span class="source-name">{html_escape(title_data.get("source_name", ""))}</span>"""
+                                <div class="news-header">"""
+
+                source_name = title_data.get("source_name", "")
+                if source_name:
+                    rss_stats_html += f'<span class="source-name">{html_escape(source_name)}</span>'
 
                 # RSS 的“rank”是发布时间排序得到的序号，可选展示
                 ranks = title_data.get("ranks", [])
@@ -898,10 +901,10 @@ def render_html_content(
     # 根据配置决定内容顺序
     if reverse_content_order:
         # 新增热点在前，热点词汇统计在后
-        html += new_titles_html + rss_new_stats_html + stats_html + rss_stats_html
+        html += new_titles_html + stats_html + rss_stats_html
     else:
         # 默认：热点词汇统计在前，新增热点在后
-        html += stats_html + rss_stats_html + new_titles_html + rss_new_stats_html
+        html += stats_html + new_titles_html + rss_stats_html
 
     html += """
             </div>

@@ -61,7 +61,7 @@ rss:
   #    - 只有新鲜的文章会被推送到通知渠道
   freshness_filter:
     enabled: true                     # 是否启用新鲜度过滤（默认启用）
-    max_age_days: 3                   # 最大文章年龄（天）
+    max_age_days: 7                   # 最大文章年龄（天）
                                       # - 正整数：只推送 N 天内的文章
                                       # - 0：禁用过滤，推送所有文章
 
@@ -126,7 +126,7 @@ rss:
     - id: "ruanyifeng"
       name: "阮一峰的网络日志"
       url: "http://www.ruanyifeng.com/blog/atom.xml"
-      filter_by_keywords: false        # 个人博客：全量推送（仍受全局过滤词影响）
+      filter_by_keywords: false        # 临时测试：全量推送（仍受全局过滤词影响）
 
     - id: "lawtee"
       name: "老T博客"
@@ -275,8 +275,8 @@ notification:
   push_window:
     enabled: true                     # 是否启用推送时间窗口控制
     start: "07:00"                    # 开始时间（北京时间）
-    end: "12:30"                      # 结束时间（北京时间）
-    once_per_day: false                # true=窗口内只推送一次，false=窗口内每次执行都推送
+    end: "23:59"                      # 结束时间（北京时间，临时测试放宽）
+    once_per_day: true                # true=窗口内只推送一次，false=窗口内每次执行都推送
 
   # 推送渠道配置
   channels:
