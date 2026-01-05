@@ -811,7 +811,7 @@ Supports **WeWork** (+ WeChat push solution), **Feishu**, **DingTalk**, **Telegr
 > 💡 For storage configuration details, see [Configuration Details - Storage Configuration](#11-storage-configuration-v400-new)
 
 ### **Multi-Platform Deployment**
-- **GitHub Actions**: Cloud automated operations (7-day check-in cycle + remote cloud storage)
+- **GitHub Actions**: Cloud automated operations + remote cloud storage
 - **Docker Deployment**: Supports multi-architecture containerized operation
 - **Local Running**: Python environment direct execution
 
@@ -877,7 +877,7 @@ Transform from "algorithm recommendation captivity" to "actively getting the inf
 
 * **Features**: Data is stored in **Remote Cloud Storage** (no longer written to Git repo)
 * **Recommended**: Configure cloud storage service (Cloudflare R2 free tier is sufficient, Alibaba Cloud OSS, Tencent Cloud COS, etc.)
-* **Note**: Requires periodic check-in renewal (every 7 days)
+* **Note**: No expiration by default — no check-in required
 
 1️⃣ **Get project code**
 
@@ -1549,16 +1549,10 @@ Slack is a team collaboration tool, Incoming Webhooks can push messages to Slack
 
    <br>
 
-5️⃣ **GitHub Actions Check-In Mechanism & Remote Cloud Storage Configuration**:
+5️⃣ **GitHub Actions Remote Cloud Storage Configuration**:
 
-   **v4.0.0 Important Change**: Introduced "Activity Detection" mechanism—GitHub Actions requires periodic check-in to remain active.
-
-   - **Running Cycle**: Valid for **7 days**—service will automatically suspend when countdown ends.
-   - **Renewal Method**: Manually trigger the "Check In" workflow on the Actions page to reset the 7-day validity period.
-   - **Operation Path**: `Actions` → `Check In` → `Run workflow`
-   - **Design Philosophy**:
-     - If you forget for 7 days, maybe you don't really need it. Letting it stop is a digital detox, freeing you from the constant impact.
-     - GitHub Actions is a valuable public computing resource. The check-in mechanism aims to prevent wasted computing cycles, ensuring resources are allocated to truly active users who need them. Thank you for your understanding and support.
+   - **Running cycle**: Long-term by default — no 7-day validity limit
+   - **Execution frequency**: Modify the `cron` in `.github/workflows/crawler.yml` (GitHub Actions uses UTC)
 
    ---
 
