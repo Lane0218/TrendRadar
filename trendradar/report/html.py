@@ -48,93 +48,70 @@ def render_html_content(
     html = """
     <!DOCTYPE html>
     <html>
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>热点新闻分析</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-        <style>
-            * { box-sizing: border-box; }
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-                margin: 0;
-                padding: 16px;
-                background: #fafafa;
-                color: #333;
-                line-height: 1.5;
-            }
+	    <head>
+	        <meta charset="UTF-8">
+	        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	        <title>资讯早报</title>
+	        <style>
+	            :root {
+	                --bg: #f8fafc;
+	                --card: #ffffff;
+	                --text: #111827;
+	                --muted: #6b7280;
+	                --border: #eef2f7;
+	                --accent: #4f46e5;
+	                --accent2: #7c3aed;
+	                --shadow: 0 6px 24px rgba(17, 24, 39, 0.08);
+	            }
+	            * { box-sizing: border-box; }
+	            body {
+	                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+	                margin: 0;
+	                padding: 16px;
+	                background: var(--bg);
+	                color: var(--text);
+	                line-height: 1.5;
+	            }
 
-            .container {
-                max-width: 600px;
-                margin: 0 auto;
-                background: white;
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 2px 16px rgba(0,0,0,0.06);
-            }
+	            .container {
+	                max-width: 600px;
+	                margin: 0 auto;
+	                background: var(--card);
+	                border-radius: 14px;
+	                overflow: hidden;
+	                box-shadow: var(--shadow);
+	                border: 1px solid var(--border);
+	            }
 
-            .header {
-                background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-                color: white;
-                padding: 32px 24px;
-                text-align: center;
-                position: relative;
-            }
+	            .header {
+	                background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+	                color: white;
+	                padding: 32px 24px;
+	                text-align: center;
+	                position: relative;
+	            }
 
-            .save-buttons {
-                position: absolute;
-                top: 16px;
-                right: 16px;
-                display: flex;
-                gap: 8px;
-            }
+	            .header-title {
+	                font-size: 22px;
+	                font-weight: 700;
+	                margin: 0 0 20px 0;
+	            }
 
-            .save-btn {
-                background: rgba(255, 255, 255, 0.2);
-                border: 1px solid rgba(255, 255, 255, 0.3);
-                color: white;
-                padding: 8px 16px;
-                border-radius: 6px;
-                cursor: pointer;
-                font-size: 13px;
-                font-weight: 500;
-                transition: all 0.2s ease;
-                backdrop-filter: blur(10px);
-                white-space: nowrap;
-            }
+	            .header-info {
+	                display: grid;
+	                grid-template-columns: repeat(3, 1fr);
+	                gap: 12px;
+	                font-size: 14px;
+	                opacity: 0.95;
+	            }
 
-            .save-btn:hover {
-                background: rgba(255, 255, 255, 0.3);
-                border-color: rgba(255, 255, 255, 0.5);
-                transform: translateY(-1px);
-            }
-
-            .save-btn:active {
-                transform: translateY(0);
-            }
-
-            .save-btn:disabled {
-                opacity: 0.6;
-                cursor: not-allowed;
-            }
-
-            .header-title {
-                font-size: 22px;
-                font-weight: 700;
-                margin: 0 0 20px 0;
-            }
-
-            .header-info {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 16px;
-                font-size: 14px;
-                opacity: 0.95;
-            }
-
-            .info-item {
-                text-align: center;
-            }
+	            .info-item {
+	                text-align: center;
+	                padding: 12px 10px;
+	                border-radius: 12px;
+	                background: rgba(255, 255, 255, 0.14);
+	                border: 1px solid rgba(255, 255, 255, 0.22);
+	            }
 
             .info-label {
                 display: block;
@@ -156,21 +133,21 @@ def render_html_content(
                 margin-bottom: 28px;
             }
 
-            .content-section-title {
-                display: flex;
-                align-items: baseline;
-                gap: 10px;
-                margin: 0 0 18px 0;
-                font-size: 16px;
-                font-weight: 700;
-                color: #111827;
-            }
+	            .content-section-title {
+	                display: flex;
+	                align-items: baseline;
+	                gap: 10px;
+	                margin: 0 0 18px 0;
+	                font-size: 16px;
+	                font-weight: 700;
+	                color: var(--text);
+	            }
 
-            .content-section-subtitle {
-                font-size: 12px;
-                font-weight: 500;
-                color: #6b7280;
-            }
+	            .content-section-subtitle {
+	                font-size: 12px;
+	                font-weight: 500;
+	                color: var(--muted);
+	            }
 
             .word-group {
                 margin-bottom: 40px;
@@ -180,14 +157,14 @@ def render_html_content(
                 margin-top: 0;
             }
 
-            .word-header {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 20px;
-                padding-bottom: 8px;
-                border-bottom: 1px solid #f0f0f0;
-            }
+	            .word-header {
+	                display: flex;
+	                align-items: center;
+	                justify-content: space-between;
+	                margin-bottom: 20px;
+	                padding-bottom: 8px;
+	                border-bottom: 1px solid var(--border);
+	            }
 
             .word-info {
                 display: flex;
@@ -483,80 +460,48 @@ def render_html_content(
                 color: #374151;
             }
 
-            @media (max-width: 480px) {
-                body { padding: 12px; }
-                .header { padding: 24px 20px; }
-                .content { padding: 20px; }
-                .footer { padding: 16px 20px; }
-                .header-info { grid-template-columns: 1fr; gap: 12px; }
-                .news-header { gap: 6px; }
-                .news-content { padding-right: 45px; }
-                .news-item { gap: 8px; }
-                .new-item { gap: 8px; }
-                .news-number { width: 20px; height: 20px; font-size: 12px; }
-                .save-buttons {
-                    position: static;
-                    margin-bottom: 16px;
-                    display: flex;
-                    gap: 8px;
-                    justify-content: center;
-                    flex-direction: column;
-                    width: 100%;
-                }
-                .save-btn {
-                    width: 100%;
-                }
-            }
-        </style>
+	            @media (max-width: 480px) {
+	                body { padding: 12px; }
+	                .header { padding: 24px 20px; }
+	                .content { padding: 20px; }
+	                .footer { padding: 16px 20px; }
+	                .header-info { grid-template-columns: 1fr; gap: 12px; }
+	                .news-header { gap: 6px; }
+	                .news-content { padding-right: 45px; }
+	                .news-item { gap: 8px; }
+	                .new-item { gap: 8px; }
+	                .news-number { width: 20px; height: 20px; font-size: 12px; }
+	            }
+	        </style>
     </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <div class="save-buttons">
-                    <button class="save-btn" onclick="saveAsImage()">保存为图片</button>
-                    <button class="save-btn" onclick="saveAsMultipleImages()">分段保存</button>
-                </div>
-                <div class="header-title">热点新闻分析</div>
-                <div class="header-info">
-                    <div class="info-item">
-                        <span class="info-label">报告类型</span>
-                        <span class="info-value">"""
+	    <body>
+	        <div class="container">
+	            <div class="header">
+	                <div class="header-title">资讯早报</div>
+	                <div class="header-info">
+	                    <div class="info-item">
+	                        <span class="info-label">新闻</span>
+	                        <span class="info-value">"""
 
-    # 处理报告类型显示
-    if is_daily_summary:
-        if mode == "current":
-            html += "当前榜单"
-        elif mode == "incremental":
-            html += "增量模式"
-        else:
-            html += "当日汇总"
-    else:
-        html += "实时分析"
-
-    html += """</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">新闻总数</span>
-                        <span class="info-value">"""
-
-    html += f"{total_titles} 条"
-
-    # 计算筛选后的热点新闻数量
-    hot_news_count = sum(len(stat["titles"]) for stat in report_data["stats"])
-
-    html += """</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">热点新闻</span>
-                        <span class="info-value">"""
+    # 计算筛选后的新闻/博客数量
+    hot_news_count = sum(len(stat.get("titles", [])) for stat in report_data.get("stats", []) or [])
+    blog_count = sum(len(stat.get("titles", [])) for stat in report_data.get("rss_stats", []) or [])
 
     html += f"{hot_news_count} 条"
 
     html += """</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">生成时间</span>
-                        <span class="info-value">"""
+	                    </div>
+	                    <div class="info-item">
+	                        <span class="info-label">博客</span>
+	                        <span class="info-value">"""
+
+    html += f"{blog_count} 条"
+
+    html += """</span>
+	                    </div>
+	                    <div class="info-item">
+	                        <span class="info-label">生成时间</span>
+	                        <span class="info-value">"""
 
     # 使用提供的时间函数或默认 datetime.now
     if get_time_func:
@@ -566,9 +511,9 @@ def render_html_content(
     html += now.strftime("%m-%d %H:%M")
 
     html += """</span>
-                    </div>
-                </div>
-            </div>
+	                    </div>
+	                </div>
+	            </div>
 
             <div class="content">"""
 
@@ -943,7 +888,7 @@ def render_html_content(
 
                     const link = document.createElement('a');
                     const now = new Date();
-                    const filename = `TrendRadar_热点新闻分析_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.png`;
+                    const filename = `TrendRadar_资讯早报_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}.png`;
 
                     link.download = filename;
                     link.href = canvas.toDataURL('image/png', 1.0);
@@ -1169,7 +1114,7 @@ def render_html_content(
 
                     // 下载所有图片
                     const now = new Date();
-                    const baseFilename = `TrendRadar_热点新闻分析_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+                    const baseFilename = `TrendRadar_资讯早报_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}_${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
 
                     for (let i = 0; i < images.length; i++) {
                         const link = document.createElement('a');
@@ -1190,7 +1135,7 @@ def render_html_content(
                     }, 2000);
 
                 } catch (error) {
-                    console.error('分段保存失败:', error);
+                    console.error('保存失败:', error);
                     const buttons = document.querySelector('.save-buttons');
                     buttons.style.visibility = 'visible';
                     button.textContent = '保存失败';
