@@ -5,6 +5,7 @@ RSS 抓取器
 负责从配置的 RSS 源抓取数据并转换为标准格式
 """
 
+import hashlib
 import time
 import random
 from dataclasses import dataclass
@@ -153,11 +154,23 @@ class RSSFetcher:
             items = []
 
             for parsed in parsed_items:
+                # URL 兜底策略：
+                # - 优先使用解析到的 url（通常为可点击链接）
+                # - 如果 url 缺失，尝试使用 guid（部分 RSS 把 guid 当作永久链接）
+                # - 如果仍缺失，生成稳定的 urn 作为唯一标识，避免 sqlite UNIQUE(url, feed_id) 冲突
+                item_url = (parsed.url or "").strip()
+                if not item_url:
+                    item_url = (parsed.guid or "").strip()
+                if not item_url:
+                    stable_src = f"{feed.id}|{parsed.title}|{parsed.published_at or ''}"
+                    digest = hashlib.sha1(stable_src.encode("utf-8")).hexdigest()
+                    item_url = f"urn:trendradar:rss:{feed.id}:{digest}"
+
                 item = RSSItem(
                     title=parsed.title,
                     feed_id=feed.id,
                     feed_name=feed.name,
-                    url=parsed.url,
+                    url=item_url,
                     published_at=parsed.published_at or "",
                     summary=parsed.summary or "",
                     author=parsed.author or "",
