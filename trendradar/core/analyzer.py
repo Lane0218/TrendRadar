@@ -10,7 +10,7 @@
 
 from typing import Dict, List, Tuple, Optional, Callable
 
-from trendradar.core.frequency import matches_word_groups
+from trendradar.core.frequency import matches_word_groups, matches_group
 
 
 def calculate_news_weight(
@@ -249,40 +249,15 @@ def count_word_frequency(
             source_url = title_data.get("url", "")
             source_mobile_url = title_data.get("mobileUrl", "")
 
-            # 找到匹配的词组（防御性转换确保类型安全）
-            title_lower = str(title).lower() if not isinstance(title, str) else title.lower()
+            # 找到匹配的词组（与 matches_word_groups 使用同一套匹配逻辑）
             for group in word_groups:
-                required_words = group["required"]
-                normal_words = group["normal"]
+                if not matches_group(title, group):
+                    continue
 
-                # 如果是"全部新闻"模式，所有标题都匹配第一个（唯一的）词组
-                if len(word_groups) == 1 and word_groups[0]["group_key"] == "全部新闻":
-                    group_key = group["group_key"]
-                    word_stats[group_key]["count"] += 1
-                    if source_id not in word_stats[group_key]["titles"]:
-                        word_stats[group_key]["titles"][source_id] = []
-                else:
-                    # 原有的匹配逻辑
-                    if required_words:
-                        all_required_present = all(
-                            req_word.lower() in title_lower
-                            for req_word in required_words
-                        )
-                        if not all_required_present:
-                            continue
-
-                    if normal_words:
-                        any_normal_present = any(
-                            normal_word.lower() in title_lower
-                            for normal_word in normal_words
-                        )
-                        if not any_normal_present:
-                            continue
-
-                    group_key = group["group_key"]
-                    word_stats[group_key]["count"] += 1
-                    if source_id not in word_stats[group_key]["titles"]:
-                        word_stats[group_key]["titles"][source_id] = []
+                group_key = group["group_key"]
+                word_stats[group_key]["count"] += 1
+                if source_id not in word_stats[group_key]["titles"]:
+                    word_stats[group_key]["titles"][source_id] = []
 
                 first_time = ""
                 last_time = ""
@@ -586,63 +561,42 @@ def count_rss_frequency(
             continue
 
         # 找到匹配的词组
-        title_lower = title.lower()
         for group in word_groups:
-            required_words = group["required"]
-            normal_words = group["normal"]
             group_key = group["group_key"]
 
-            # "全部 RSS" 模式：所有条目都匹配
-            if len(word_groups) == 1 and word_groups[0]["group_key"] == "全部 RSS":
-                matched = True
-            else:
-                # 检查必须词
-                if required_words:
-                    all_required_present = all(
-                        req_word.lower() in title_lower
-                        for req_word in required_words
-                    )
-                    if not all_required_present:
-                        continue
+            if not matches_group(title, group):
+                continue
 
-                # 检查普通词
-                if normal_words:
-                    any_normal_present = any(
-                        normal_word.lower() in title_lower
-                        for normal_word in normal_words
-                    )
-                    if not any_normal_present:
-                        continue
+            word_stats[group_key]["count"] += 1
 
-                matched = True
+            # 格式化时间显示
+            published_at = item.get("published_at", "")
+            time_display = (
+                format_iso_time_friendly(published_at, timezone, include_date=True)
+                if published_at
+                else ""
+            )
 
-            if matched:
-                word_stats[group_key]["count"] += 1
+            # 判断是否为新增
+            is_new = url in new_urls if url else False
 
-                # 格式化时间显示
-                published_at = item.get("published_at", "")
-                time_display = format_iso_time_friendly(published_at, timezone, include_date=True) if published_at else ""
+            # 获取排名（基于发布时间顺序）
+            rank = url_to_rank.get(url, 99) if url else 99
 
-                # 判断是否为新增
-                is_new = url in new_urls if url else False
-
-                # 获取排名（基于发布时间顺序）
-                rank = url_to_rank.get(url, 99) if url else 99
-
-                title_data = {
-                    "title": title,
-                    "feed_id": item.get("feed_id", ""),
-                    "source_name": item.get("feed_name", item.get("feed_id", "RSS")),
-                    "time_display": time_display,
-                    "count": 1,  # RSS 条目通常只出现一次
-                    "ranks": [rank],
-                    "rank_threshold": rank_threshold,
-                    "url": url,
-                    "mobile_url": "",
-                    "is_new": is_new,
-                }
-                word_stats[group_key]["titles"].append(title_data)
-                break  # 一个条目只匹配第一个词组
+            title_data = {
+                "title": title,
+                "feed_id": item.get("feed_id", ""),
+                "source_name": item.get("feed_name", item.get("feed_id", "RSS")),
+                "time_display": time_display,
+                "count": 1,  # RSS 条目通常只出现一次
+                "ranks": [rank],
+                "rank_threshold": rank_threshold,
+                "url": url,
+                "mobile_url": "",
+                "is_new": is_new,
+            }
+            word_stats[group_key]["titles"].append(title_data)
+            break  # 一个条目只匹配第一个词组
 
     # 构建统计结果
     stats = []

@@ -11,6 +11,8 @@
 """
 
 import os
+import re
+from functools import lru_cache
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 
@@ -129,6 +131,84 @@ def load_frequency_words(
     return processed_groups, filter_words, global_filters
 
 
+def _should_use_ascii_word_boundary(keyword: str) -> bool:
+    """
+    判断一个关键词是否应使用 ASCII 单词边界匹配。
+
+    目的：避免短英文关键词（如 AI/EU/G7）在英文单词内部误命中，
+    例如 "arrAIgned"、"Air"、"sAid" 等。
+
+    规则：仅对 2~4 位的纯 ASCII 字母/数字关键词启用。
+    """
+    if not keyword:
+        return False
+    if not isinstance(keyword, str):
+        keyword = str(keyword)
+    if len(keyword) < 2 or len(keyword) > 4:
+        return False
+    # 只针对纯 ASCII 字母/数字短词启用边界匹配（中英文混合/带符号短词仍按子串匹配）
+    return keyword.isascii() and keyword.isalnum()
+
+
+@lru_cache(maxsize=4096)
+def _compile_ascii_boundary_pattern(keyword_lower: str) -> re.Pattern:
+    """
+    编译短英文关键词的 ASCII 边界匹配正则。
+
+    使用 ASCII 字母/数字边界，而不是 \\b：
+    - \\b 在 Unicode 下会把中文也视为 "word char"，导致 "AI新能源" 不匹配
+    - ASCII 边界则可在 "AI新能源" / "GPU计算" 等中文紧邻场景匹配，同时避免在英文单词内部误命中
+    """
+    escaped = re.escape(keyword_lower)
+    return re.compile(rf"(?<![A-Za-z0-9]){escaped}(?![A-Za-z0-9])", re.IGNORECASE)
+
+
+def _keyword_in_title(title: str, title_lower: str, keyword: str) -> bool:
+    """判断 keyword 是否匹配 title（支持短英文 ASCII 边界匹配）。"""
+    if not keyword:
+        return False
+    if not isinstance(keyword, str):
+        keyword = str(keyword)
+    if not keyword:
+        return False
+
+    if _should_use_ascii_word_boundary(keyword):
+        pattern = _compile_ascii_boundary_pattern(keyword.lower())
+        return bool(pattern.search(title))
+
+    return keyword.lower() in title_lower
+
+
+def matches_group(title: str, group: Dict) -> bool:
+    """
+    判断标题是否匹配单个词组（不包含全局过滤/过滤词逻辑）。
+
+    说明：该函数用于在已通过过滤检查后，确定命中的是哪个词组，
+    保证与 matches_word_groups 的匹配规则一致。
+    """
+    # 防御性类型检查：确保 title 是有效字符串
+    if not isinstance(title, str):
+        title = str(title) if title is not None else ""
+    if not title:
+        return False
+
+    title_lower = title.lower()
+    required_words = group.get("required", []) or []
+    normal_words = group.get("normal", []) or []
+
+    # 必须词：全部命中
+    if required_words:
+        if not all(_keyword_in_title(title, title_lower, w) for w in required_words):
+            return False
+
+    # 普通词：任意命中
+    if normal_words:
+        if not any(_keyword_in_title(title, title_lower, w) for w in normal_words):
+            return False
+
+    return True
+
+
 def matches_word_groups(
     title: str,
     word_groups: List[Dict],
@@ -157,7 +237,7 @@ def matches_word_groups(
 
     # 全局过滤检查（优先级最高）
     if global_filters:
-        if any(global_word.lower() in title_lower for global_word in global_filters):
+        if any(_keyword_in_title(title, title_lower, global_word) for global_word in global_filters):
             return False
 
     # 如果没有配置词组，则匹配所有标题（支持显示全部新闻）
@@ -165,30 +245,12 @@ def matches_word_groups(
         return True
 
     # 过滤词检查
-    if any(filter_word.lower() in title_lower for filter_word in filter_words):
+    if any(_keyword_in_title(title, title_lower, filter_word) for filter_word in filter_words):
         return False
 
     # 词组匹配检查
     for group in word_groups:
-        required_words = group["required"]
-        normal_words = group["normal"]
-
-        # 必须词检查
-        if required_words:
-            all_required_present = all(
-                req_word.lower() in title_lower for req_word in required_words
-            )
-            if not all_required_present:
-                continue
-
-        # 普通词检查
-        if normal_words:
-            any_normal_present = any(
-                normal_word.lower() in title_lower for normal_word in normal_words
-            )
-            if not any_normal_present:
-                continue
-
-        return True
+        if matches_group(title, group):
+            return True
 
     return False
