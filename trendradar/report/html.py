@@ -64,32 +64,38 @@ def render_html_content(
 	                --shadow: 0 6px 24px rgba(17, 24, 39, 0.08);
 	            }
 	            * { box-sizing: border-box; }
-	            body {
-	                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-	                margin: 0;
-	                padding: 16px;
-	                background: var(--bg);
-	                color: var(--text);
-	                line-height: 1.5;
-	            }
+		            body {
+		                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+		                margin: 0;
+		                padding: 16px;
+		                background: #f8fafc;
+		                background: var(--bg);
+		                color: #111827;
+		                color: var(--text);
+		                line-height: 1.5;
+		            }
 
-	            .container {
-	                max-width: 600px;
-	                margin: 0 auto;
-	                background: var(--card);
-	                border-radius: 14px;
-	                overflow: hidden;
-	                box-shadow: var(--shadow);
-	                border: 1px solid var(--border);
-	            }
+		            .container {
+		                max-width: 600px;
+		                margin: 0 auto;
+		                background: #ffffff;
+		                background: var(--card);
+		                border-radius: 14px;
+		                overflow: hidden;
+		                box-shadow: 0 6px 24px rgba(17, 24, 39, 0.08);
+		                box-shadow: var(--shadow);
+		                border: 1px solid #eef2f7;
+		                border: 1px solid var(--border);
+		            }
 
-	            .header {
-	                background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-	                color: white;
-	                padding: 32px 24px;
-	                text-align: center;
-	                position: relative;
-	            }
+		            .header {
+		                background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+		                background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+		                color: white;
+		                padding: 32px 24px;
+		                text-align: center;
+		                position: relative;
+		            }
 
 	            .header-title {
 	                font-size: 22px;
@@ -133,15 +139,16 @@ def render_html_content(
                 margin-bottom: 28px;
             }
 
-	            .content-section-title {
-	                display: flex;
-	                align-items: baseline;
-	                gap: 10px;
-	                margin: 0 0 18px 0;
-	                font-size: 16px;
-	                font-weight: 700;
-	                color: var(--text);
-	            }
+		            .content-section-title {
+		                display: flex;
+		                align-items: baseline;
+		                gap: 10px;
+		                margin: 0 0 18px 0;
+		                font-size: 16px;
+		                font-weight: 700;
+		                color: #111827;
+		                color: var(--text);
+		            }
 
 	            .content-section-subtitle {
 	                font-size: 12px;
@@ -157,14 +164,15 @@ def render_html_content(
                 margin-top: 0;
             }
 
-	            .word-header {
-	                display: flex;
-	                align-items: center;
-	                justify-content: space-between;
-	                margin-bottom: 20px;
-	                padding-bottom: 8px;
-	                border-bottom: 1px solid var(--border);
-	            }
+		            .word-header {
+		                display: flex;
+		                align-items: center;
+		                justify-content: space-between;
+		                margin-bottom: 20px;
+		                padding-bottom: 8px;
+		                border-bottom: 1px solid #eef2f7;
+		                border-bottom: 1px solid var(--border);
+		            }
 
             .word-info {
                 display: flex;
@@ -192,33 +200,43 @@ def render_html_content(
                 font-size: 12px;
             }
 
-            .news-item {
-                margin-bottom: 20px;
-                padding: 16px 0;
-                border-bottom: 1px solid #f5f5f5;
-                position: relative;
-                display: flex;
-                gap: 12px;
-                align-items: center;
-            }
+	            .news-item {
+	                margin: 0 0 12px 0;
+	                padding: 12px 12px;
+	                border: 1px solid #eef2f7;
+	                border-radius: 12px;
+	                background: #ffffff;
+	                box-shadow: 0 1px 0 rgba(17, 24, 39, 0.03);
+	                position: relative;
+	                display: flex;
+	                gap: 12px;
+	                align-items: flex-start;
+	                transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+	            }
 
-            .news-item:last-child {
-                border-bottom: none;
-            }
+	            .news-item:last-child {
+	                margin-bottom: 0;
+	            }
 
-            .news-item.new::after {
-                content: "NEW";
-                position: absolute;
-                top: 12px;
-                right: 0;
-                background: #fbbf24;
-                color: #92400e;
-                font-size: 9px;
-                font-weight: 700;
-                padding: 3px 6px;
-                border-radius: 4px;
-                letter-spacing: 0.5px;
-            }
+	            .news-item:hover {
+	                border-color: #e5e7eb;
+	                box-shadow: 0 10px 22px rgba(17, 24, 39, 0.08);
+	                transform: translateY(-1px);
+	            }
+
+	            .news-item.new::after {
+	                content: "NEW";
+	                position: absolute;
+	                top: 10px;
+	                right: 10px;
+	                background: #fbbf24;
+	                color: #92400e;
+	                font-size: 9px;
+	                font-weight: 700;
+	                padding: 3px 6px;
+	                border-radius: 4px;
+	                letter-spacing: 0.5px;
+	            }
 
             .news-number {
                 color: #999;
@@ -238,15 +256,13 @@ def render_html_content(
                 margin-top: 8px;
             }
 
-            .news-content {
-                flex: 1;
-                min-width: 0;
-                padding-right: 40px;
-            }
+	            .news-content {
+	                flex: 1;
+	                min-width: 0;
+	                padding-right: 52px;
+	            }
 
-            .news-item.new .news-content {
-                padding-right: 50px;
-            }
+	            .news-item.new .news-content { padding-right: 52px; }
 
             .news-header {
                 display: flex;
@@ -256,11 +272,17 @@ def render_html_content(
                 flex-wrap: wrap;
             }
 
-            .source-name {
-                color: #666;
-                font-size: 12px;
-                font-weight: 500;
-            }
+	            .source-name {
+	                display: inline-flex;
+	                align-items: center;
+	                background: #f1f5f9;
+	                border: 1px solid #e2e8f0;
+	                color: #475569;
+	                font-size: 11px;
+	                font-weight: 600;
+	                padding: 2px 8px;
+	                border-radius: 999px;
+	            }
 
             .rank-num {
                 color: #fff;
@@ -276,10 +298,14 @@ def render_html_content(
             .rank-num.top { background: #dc2626; }
             .rank-num.high { background: #ea580c; }
 
-            .time-info {
-                color: #999;
-                font-size: 11px;
-            }
+	            .time-info {
+	                color: #6b7280;
+	                font-size: 11px;
+	                background: #f8fafc;
+	                border: 1px solid #eef2f7;
+	                padding: 2px 8px;
+	                border-radius: 999px;
+	            }
 
             .count-info {
                 color: #059669;
@@ -287,17 +313,17 @@ def render_html_content(
                 font-weight: 500;
             }
 
-            .news-title {
-                font-size: 15px;
-                line-height: 1.4;
-                color: #1a1a1a;
-                margin: 0;
-            }
+	            .news-title {
+	                font-size: 15px;
+	                line-height: 1.4;
+	                color: #0f172a;
+	                margin: 0;
+	            }
 
-            .news-link {
-                color: #2563eb;
-                text-decoration: none;
-            }
+	            .news-link {
+	                color: #1d4ed8;
+	                text-decoration: none;
+	            }
 
             .news-link:hover {
                 text-decoration: underline;
@@ -534,25 +560,12 @@ def render_html_content(
     if report_data["stats"]:
         total_count = len(report_data["stats"])
 
-        stats_html += f"""
+        stats_html += """
                 <div class="content-section">
-                    <div class="content-section-title">
-                        📰 新闻
-                        <span class="content-section-subtitle">关键词筛选 · 共 {hot_news_count} 条</span>
-                    </div>
+                    <div class="content-section-title">📰 新闻</div>
                 </div>"""
 
         for i, stat in enumerate(report_data["stats"], 1):
-            count = stat["count"]
-
-            # 确定热度等级
-            if count >= 10:
-                count_class = "hot"
-            elif count >= 5:
-                count_class = "warm"
-            else:
-                count_class = ""
-
             # 关键词组名称可能是“多个关键词拼接”的长串，这里只展示第一个关键词
             raw_word = stat.get("word", "")
             first_keyword = raw_word.split()[0] if isinstance(raw_word, str) and raw_word.split() else raw_word
@@ -563,7 +576,6 @@ def render_html_content(
                     <div class="word-header">
                         <div class="word-info">
                             <div class="word-name">{escaped_word}</div>
-                            <div class="word-count {count_class}">{count} 条</div>
                         </div>
                         <div class="word-index">{i}/{total_count}</div>
                     </div>"""
@@ -648,23 +660,12 @@ def render_html_content(
     rss_stats_html = ""
     rss_stats = report_data.get("rss_stats") or []
     if rss_stats:
-        rss_total_items = sum(len(stat.get("titles", [])) for stat in rss_stats)
         rss_stats_html += f"""
                 <div class="rss-section">
-                    <div class="rss-section-title">📝 博客 </div>"""
+                    <div class="rss-section-title">📝 博客</div>"""
 
         total_count = len(rss_stats)
         for i, stat in enumerate(rss_stats, 1):
-            count = stat.get("count", 0)
-
-            # 确定热度等级
-            if count >= 10:
-                count_class = "hot"
-            elif count >= 5:
-                count_class = "warm"
-            else:
-                count_class = ""
-
             escaped_word = html_escape(stat.get("word", "RSS"))
 
             rss_stats_html += f"""
@@ -672,7 +673,6 @@ def render_html_content(
                         <div class="word-header">
                             <div class="word-info">
                                 <div class="word-name">{escaped_word}</div>
-                                <div class="word-count {count_class}">{count} 条</div>
                             </div>
                             <div class="word-index">{i}/{total_count}</div>
                         </div>"""
@@ -822,24 +822,6 @@ def render_html_content(
         html += stats_html + new_titles_html + rss_stats_html
 
     html += """
-            </div>
-
-            <div class="footer">
-                <div class="footer-content">
-                    由 <span class="project-name">TrendRadar</span> 生成 ·
-                    <a href="https://github.com/sansan0/TrendRadar" target="_blank" class="footer-link">
-                        GitHub 开源项目
-                    </a>"""
-
-    if update_info:
-        html += f"""
-                    <br>
-                    <span style="color: #ea580c; font-weight: 500;">
-                        发现新版本 {update_info['remote_version']}，当前版本 {update_info['current_version']}
-                    </span>"""
-
-    html += """
-                </div>
             </div>
         </div>
 
