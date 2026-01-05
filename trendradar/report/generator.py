@@ -20,6 +20,8 @@ def prepare_report_data(
     rank_threshold: int = 3,
     matches_word_groups_func: Optional[Callable] = None,
     load_frequency_words_func: Optional[Callable] = None,
+    rss_stats: Optional[List[Dict]] = None,
+    rss_new_stats: Optional[List[Dict]] = None,
 ) -> Dict:
     """
     准备报告数据
@@ -130,6 +132,11 @@ def prepare_report_data(
     return {
         "stats": processed_stats,
         "new_titles": processed_new_titles,
+        # RSS 统计（可选）：用于邮件/HTML 报告合并展示
+        # rss_stats/rss_new_stats 的结构与 stats 一致：
+        # [{"word": "...", "count": N, "titles": [...]}]
+        "rss_stats": rss_stats or [],
+        "rss_new_stats": rss_new_stats or [],
         "failed_ids": failed_ids or [],
         "total_new_count": sum(
             len(source["titles"]) for source in processed_new_titles
@@ -154,6 +161,8 @@ def generate_html_report(
     matches_word_groups_func: Optional[Callable] = None,
     load_frequency_words_func: Optional[Callable] = None,
     enable_index_copy: bool = True,
+    rss_stats: Optional[List[Dict]] = None,
+    rss_new_stats: Optional[List[Dict]] = None,
 ) -> str:
     """
     生成 HTML 报告
@@ -204,6 +213,8 @@ def generate_html_report(
         rank_threshold,
         matches_word_groups_func,
         load_frequency_words_func,
+        rss_stats=rss_stats,
+        rss_new_stats=rss_new_stats,
     )
 
     # 渲染 HTML 内容

@@ -7,6 +7,7 @@ HTML 报告渲染模块
 
 from datetime import datetime
 from typing import Dict, Optional, Callable
+from urllib.parse import urlparse
 
 from trendradar.report.helpers import html_escape
 
@@ -35,6 +36,15 @@ def render_html_content(
     Returns:
         渲染后的 HTML 字符串
     """
+    def _is_http_url(url: str) -> bool:
+        if not url:
+            return False
+        try:
+            parsed = urlparse(url)
+            return parsed.scheme in ("http", "https") and bool(parsed.netloc)
+        except Exception:
+            return False
+
     html = """
     <!DOCTYPE html>
     <html>
@@ -307,6 +317,19 @@ def render_html_content(
             }
 
             .new-section-title {
+                color: #1a1a1a;
+                font-size: 16px;
+                font-weight: 600;
+                margin: 0 0 20px 0;
+            }
+
+            .rss-section {
+                margin-top: 40px;
+                padding-top: 24px;
+                border-top: 2px solid #f0f0f0;
+            }
+
+            .rss-section-title {
                 color: #1a1a1a;
                 font-size: 16px;
                 font-weight: 600;
@@ -629,7 +652,7 @@ def render_html_content(
                 escaped_title = html_escape(title_data["title"])
                 link_url = title_data.get("mobile_url") or title_data.get("url", "")
 
-                if link_url:
+                if _is_http_url(link_url):
                     escaped_url = html_escape(link_url)
                     stats_html += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
                 else:
@@ -689,7 +712,7 @@ def render_html_content(
                 escaped_title = html_escape(title_data["title"])
                 link_url = title_data.get("mobile_url") or title_data.get("url", "")
 
-                if link_url:
+                if _is_http_url(link_url):
                     escaped_url = html_escape(link_url)
                     new_titles_html += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
                 else:
@@ -706,13 +729,179 @@ def render_html_content(
         new_titles_html += """
                 </div>"""
 
+    # 生成 RSS 统计区块的 HTML（用于邮件/HTML 报告合并展示）
+    rss_stats_html = ""
+    rss_stats = report_data.get("rss_stats") or []
+    if rss_stats:
+        rss_total_items = sum(len(stat.get("titles", [])) for stat in rss_stats)
+        rss_stats_html += f"""
+                <div class="rss-section">
+                    <div class="rss-section-title">📰 RSS 订阅统计 (共 {rss_total_items} 条)</div>"""
+
+        total_count = len(rss_stats)
+        for i, stat in enumerate(rss_stats, 1):
+            count = stat.get("count", 0)
+
+            # 确定热度等级
+            if count >= 10:
+                count_class = "hot"
+            elif count >= 5:
+                count_class = "warm"
+            else:
+                count_class = ""
+
+            escaped_word = html_escape(stat.get("word", "RSS"))
+
+            rss_stats_html += f"""
+                    <div class="word-group">
+                        <div class="word-header">
+                            <div class="word-info">
+                                <div class="word-name">{escaped_word}</div>
+                                <div class="word-count {count_class}">{count} 条</div>
+                            </div>
+                            <div class="word-index">{i}/{total_count}</div>
+                        </div>"""
+
+            for j, title_data in enumerate(stat.get("titles", []), 1):
+                is_new = title_data.get("is_new", False)
+                new_class = "new" if is_new else ""
+
+                rss_stats_html += f"""
+                        <div class="news-item {new_class}">
+                            <div class="news-number">{j}</div>
+                            <div class="news-content">
+                                <div class="news-header">
+                                    <span class="source-name">{html_escape(title_data.get("source_name", ""))}</span>"""
+
+                # RSS 的“rank”是发布时间排序得到的序号，可选展示
+                ranks = title_data.get("ranks", [])
+                if ranks:
+                    min_rank = min(ranks)
+                    max_rank = max(ranks)
+                    rank_threshold = title_data.get("rank_threshold", 10)
+
+                    if min_rank <= 3:
+                        rank_class = "top"
+                    elif min_rank <= rank_threshold:
+                        rank_class = "high"
+                    else:
+                        rank_class = ""
+
+                    rank_text = str(min_rank) if min_rank == max_rank else f"{min_rank}-{max_rank}"
+                    rss_stats_html += f'<span class="rank-num {rank_class}">{rank_text}</span>'
+
+                # 时间显示
+                time_display = title_data.get("time_display", "")
+                if time_display:
+                    simplified_time = (
+                        time_display.replace(" ~ ", "~")
+                        .replace("[", "")
+                        .replace("]", "")
+                    )
+                    rss_stats_html += f'<span class="time-info">{html_escape(simplified_time)}</span>'
+
+                rss_stats_html += """
+                                </div>
+                                <div class="news-title">"""
+
+                escaped_title = html_escape(title_data.get("title", ""))
+                link_url = title_data.get("mobile_url") or title_data.get("url", "")
+                if _is_http_url(link_url):
+                    escaped_url = html_escape(link_url)
+                    rss_stats_html += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
+                else:
+                    rss_stats_html += escaped_title
+
+                rss_stats_html += """
+                                </div>
+                            </div>
+                        </div>"""
+
+            rss_stats_html += """
+                    </div>"""
+
+        rss_stats_html += """
+                </div>"""
+
+    # 生成 RSS 新增区块（可选）
+    rss_new_stats_html = ""
+    rss_new_stats = report_data.get("rss_new_stats") or []
+    if rss_new_stats:
+        rss_new_total_items = sum(len(stat.get("titles", [])) for stat in rss_new_stats)
+        rss_new_stats_html += f"""
+                <div class="rss-section">
+                    <div class="rss-section-title">🆕 RSS 本次新增 (共 {rss_new_total_items} 条)</div>"""
+
+        total_count = len(rss_new_stats)
+        for i, stat in enumerate(rss_new_stats, 1):
+            count = stat.get("count", 0)
+
+            if count >= 10:
+                count_class = "hot"
+            elif count >= 5:
+                count_class = "warm"
+            else:
+                count_class = ""
+
+            escaped_word = html_escape(stat.get("word", "RSS"))
+
+            rss_new_stats_html += f"""
+                    <div class="word-group">
+                        <div class="word-header">
+                            <div class="word-info">
+                                <div class="word-name">{escaped_word}</div>
+                                <div class="word-count {count_class}">{count} 条</div>
+                            </div>
+                            <div class="word-index">{i}/{total_count}</div>
+                        </div>"""
+
+            for j, title_data in enumerate(stat.get("titles", []), 1):
+                rss_new_stats_html += f"""
+                        <div class="news-item new">
+                            <div class="news-number">{j}</div>
+                            <div class="news-content">
+                                <div class="news-header">
+                                    <span class="source-name">{html_escape(title_data.get("source_name", ""))}</span>"""
+
+                time_display = title_data.get("time_display", "")
+                if time_display:
+                    simplified_time = (
+                        time_display.replace(" ~ ", "~")
+                        .replace("[", "")
+                        .replace("]", "")
+                    )
+                    rss_new_stats_html += f'<span class="time-info">{html_escape(simplified_time)}</span>'
+
+                rss_new_stats_html += """
+                                </div>
+                                <div class="news-title">"""
+
+                escaped_title = html_escape(title_data.get("title", ""))
+                link_url = title_data.get("mobile_url") or title_data.get("url", "")
+                if _is_http_url(link_url):
+                    escaped_url = html_escape(link_url)
+                    rss_new_stats_html += f'<a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
+                else:
+                    rss_new_stats_html += escaped_title
+
+                rss_new_stats_html += """
+                                </div>
+                            </div>
+                        </div>"""
+
+            rss_new_stats_html += """
+                    </div>"""
+
+        rss_new_stats_html += """
+                </div>"""
+
     # 根据配置决定内容顺序
     if reverse_content_order:
         # 新增热点在前，热点词汇统计在后
-        html += new_titles_html + stats_html
+        html += new_titles_html + rss_new_stats_html + stats_html + rss_stats_html
     else:
         # 默认：热点词汇统计在前，新增热点在后
-        html += stats_html + new_titles_html
+        html += stats_html + rss_stats_html + new_titles_html + rss_new_stats_html
 
     html += """
             </div>

@@ -277,6 +277,8 @@ class AppContext:
         failed_ids: Optional[List] = None,
         new_titles: Optional[Dict] = None,
         id_to_name: Optional[Dict] = None,
+        rss_stats: Optional[List[Dict]] = None,
+        rss_new_stats: Optional[List[Dict]] = None,
         mode: str = "daily",
         is_daily_summary: bool = False,
         update_info: Optional[Dict] = None,
@@ -299,6 +301,8 @@ class AppContext:
             matches_word_groups_func=self.matches_word_groups,
             load_frequency_words_func=self.load_frequency_words,
             enable_index_copy=True,
+            rss_stats=rss_stats,
+            rss_new_stats=rss_new_stats,
         )
 
     def render_html(
