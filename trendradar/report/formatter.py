@@ -6,6 +6,7 @@
 """
 
 from typing import Dict
+from urllib.parse import urlparse
 
 from trendradar.report.helpers import clean_title, html_escape, format_rank_display
 
@@ -42,15 +43,25 @@ def format_title_for_platform(
     Returns:
         格式化后的标题字符串
     """
+    def _is_http_url(url: str) -> bool:
+        if not url:
+            return False
+        try:
+            parsed = urlparse(url)
+            return parsed.scheme in ("http", "https") and bool(parsed.netloc)
+        except Exception:
+            return False
+
     rank_display = format_rank_display(
         title_data["ranks"], title_data["rank_threshold"], platform
     )
 
     link_url = title_data["mobile_url"] or title_data["url"]
+    has_link = _is_http_url(link_url)
     cleaned_title = clean_title(title_data["title"])
 
     if platform == "feishu":
-        if link_url:
+        if has_link:
             formatted_title = f"[{cleaned_title}]({link_url})"
         else:
             formatted_title = cleaned_title
@@ -72,7 +83,7 @@ def format_title_for_platform(
         return result
 
     elif platform == "dingtalk":
-        if link_url:
+        if has_link:
             formatted_title = f"[{cleaned_title}]({link_url})"
         else:
             formatted_title = cleaned_title
@@ -95,7 +106,7 @@ def format_title_for_platform(
 
     elif platform in ("wework", "bark"):
         # WeWork 和 Bark 使用 markdown 格式
-        if link_url:
+        if has_link:
             formatted_title = f"[{cleaned_title}]({link_url})"
         else:
             formatted_title = cleaned_title
@@ -117,8 +128,8 @@ def format_title_for_platform(
         return result
 
     elif platform == "telegram":
-        if link_url:
-            formatted_title = f'<a href="{link_url}">{html_escape(cleaned_title)}</a>'
+        if has_link:
+            formatted_title = f'<a href="{html_escape(link_url)}">{html_escape(cleaned_title)}</a>'
         else:
             formatted_title = cleaned_title
 
@@ -139,7 +150,7 @@ def format_title_for_platform(
         return result
 
     elif platform == "ntfy":
-        if link_url:
+        if has_link:
             formatted_title = f"[{cleaned_title}]({link_url})"
         else:
             formatted_title = cleaned_title
@@ -162,7 +173,7 @@ def format_title_for_platform(
 
     elif platform == "slack":
         # Slack 使用 mrkdwn 格式
-        if link_url:
+        if has_link:
             # Slack 链接格式: <url|text>
             formatted_title = f"<{link_url}|{cleaned_title}>"
         else:
@@ -194,11 +205,12 @@ def format_title_for_platform(
         )
 
         link_url = title_data["mobile_url"] or title_data["url"]
+        has_link = _is_http_url(link_url)
 
         escaped_title = html_escape(cleaned_title)
         escaped_source_name = html_escape(title_data["source_name"])
 
-        if link_url:
+        if has_link:
             escaped_url = html_escape(link_url)
             formatted_title = f'[{escaped_source_name}] <a href="{escaped_url}" target="_blank" class="news-link">{escaped_title}</a>'
         else:
