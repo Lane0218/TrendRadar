@@ -1,29 +1,3 @@
-[GLOBAL_FILTER]
-明星
-八卦
-娱乐
-综艺
-饭圈
-塌房
-绯闻
-恋情
-分手
-离婚
-结婚
-出轨
-代言
-直播带货
-网红
-粉丝
-应援
-celebrity
-gossip
-entertainment
-idol
-dating
-divorce
-marriage
-
 [WORD_GROUPS]
 
 高性能计算
@@ -60,7 +34,6 @@ AMD
 GPU
 HBM
 NVLink
-
 编译器
 编译优化
 LLVM
@@ -71,66 +44,6 @@ compiler
 compiler optimization
 MLIR
 codegen
-
-人工智能
-AI
-大模型
-LLM
-Transformer
-多模态
-MoE
-RAG
-foundation model
-diffusion
-reasoning
-
-AI编程
-vibe coding
-Copilot
-Cursor
-Cline
-Codex
-agentic
-code generation
-代码生成
-OpenAI
-ChatGPT
-Sora
-DeepSeek
-Anthropic
-Claude
-Gemini
-DeepMind
-
-自动驾驶
-Robotaxi
-FSD
-Waymo
-NOA
-端到端
-激光雷达
-Lidar
-autonomous driving
-self-driving
-ADAS
-
-机器人
-人形机器人
-Humanoid
-具身智能
-Embodied
-robotics
-embodied AI
-
-Linux
-内核
-Kernel
-eBPF
-Kubernetes
-容器
-虚拟化
-WebAssembly
-Wasm
 
 国际热点
 中美
