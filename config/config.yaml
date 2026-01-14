@@ -144,6 +144,11 @@ rss:
       url: "https://simonwillison.net/atom/everything/"
       filter_by_keywords: false
 
+    - id: "ginonotes"
+      name: "Gino Notes"
+      url: "https://www.ginonotes.com/feed.xml"
+      filter_by_keywords: false
+
     - id: "lawtee"
       name: "老T博客"
       url: "https://lawtee.com/index.xml"
