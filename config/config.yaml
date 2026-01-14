@@ -133,6 +133,16 @@ rss:
       url: "http://www.ruanyifeng.com/blog/atom.xml"
       filter_by_keywords: false        # 临时测试：全量推送（仍受全局过滤词影响）
 
+    - id: "burkeholland"
+      name: "Burke Holland"
+      url: "https://burkeholland.github.io/feed"
+      filter_by_keywords: false
+
+    - id: "simonwillison"
+      name: "Simon Willison"
+      url: "https://simonwillison.net/atom/everything/"
+      filter_by_keywords: false
+
     - id: "lawtee"
       name: "老T博客"
       url: "https://lawtee.com/index.xml"
