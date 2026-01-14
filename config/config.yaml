@@ -45,6 +45,7 @@ platforms:
 # 每个源配置：id(唯一标识)、name(显示名称)、url(订阅地址)
 # enabled: 可选，默认 true
 # max_age_days: 可选，覆盖全局 freshness_filter.max_age_days
+# exclude_title_patterns: 可选，标题排除正则列表（匹配则不推送）
 # ===============================================================
 rss:
   enabled: true                       # 是否启用 RSS 抓取
@@ -182,6 +183,8 @@ rss:
       name: "青灯暮雨"
       url: "https://www.blatr.cn/api/v1/subscribe/rss"
       filter_by_keywords: false
+      exclude_title_patterns:
+        - '^动态#\d+$'
 
     - id: "cworld0"
       name: "CWorld Site"

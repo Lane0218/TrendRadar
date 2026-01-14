@@ -7,6 +7,7 @@ TrendRadar 主程序
 """
 
 import os
+import re
 import sqlite3
 import webbrowser
 from pathlib import Path
@@ -1154,6 +1155,8 @@ class NewsAnalyzer:
         rss_items = []
         filtered_count = 0
         skipped_feed_count = 0
+        title_filtered_count = 0
+        title_filtered_by_feed = {}
 
         # 获取新鲜度过滤配置
         rss_config = self.ctx.rss_config
@@ -1173,6 +1176,26 @@ class NewsAnalyzer:
                 except (ValueError, TypeError):
                     pass
 
+        # 构建 feed_id -> title 排除正则列表（用于过滤特定标题）
+        feed_title_exclude_patterns = {}
+        for feed_cfg in self.ctx.rss_feeds:
+            feed_id = (feed_cfg.get("id") or "").strip()
+            if not feed_id:
+                continue
+            raw_patterns = feed_cfg.get("exclude_title_patterns") or []
+            if isinstance(raw_patterns, str):
+                raw_patterns = [raw_patterns]
+            compiled = []
+            for pattern in raw_patterns:
+                if not pattern:
+                    continue
+                try:
+                    compiled.append(re.compile(pattern))
+                except re.error:
+                    print(f"[警告] RSS feed '{feed_id}' 的 exclude_title_patterns 正则无效: {pattern}")
+            if compiled:
+                feed_title_exclude_patterns[feed_id] = compiled
+
         enabled_feed_ids = self._get_enabled_rss_feed_ids()
 
         for feed_id, items in items_dict.items():
@@ -1187,6 +1210,15 @@ class NewsAnalyzer:
                 max_days = default_max_age_days
 
             for item in items:
+                # 标题排除过滤（仅影响推送/报告展示）
+                exclude_patterns = feed_title_exclude_patterns.get(feed_id)
+                if exclude_patterns:
+                    title = item.title or ""
+                    if any(p.search(title) for p in exclude_patterns):
+                        title_filtered_count += 1
+                        title_filtered_by_feed[feed_id] = title_filtered_by_feed.get(feed_id, 0) + 1
+                        continue
+
                 # 应用新鲜度过滤（仅在启用时）
                 if freshness_enabled and max_days > 0:
                     if item.published_at and not is_within_days(item.published_at, max_days, timezone):
@@ -1206,6 +1238,13 @@ class NewsAnalyzer:
         # 输出过滤统计
         if filtered_count > 0:
             print(f"[RSS] 新鲜度过滤：跳过 {filtered_count} 篇超过指定天数的旧文章（仍保留在数据库中）")
+
+        if title_filtered_count > 0:
+            by_feed = ", ".join(
+                f"{feed_id}={count}" for feed_id, count in sorted(title_filtered_by_feed.items())
+            )
+            detail = f"（{by_feed}）" if by_feed else ""
+            print(f"[RSS] 标题过滤：跳过 {title_filtered_count} 条与排除规则匹配的条目{detail}")
 
         if skipped_feed_count > 0:
             print(f"[RSS] 跳过 {skipped_feed_count} 个已禁用/未配置的 RSS 源（历史残留数据）")
