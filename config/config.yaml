@@ -23,19 +23,7 @@ app:
 # id: 平台唯一标识（勿修改）
 # name: 显示名称（可自定义，修改后不影响运行）
 # ===============================================================
-platforms:
-  - id: "wallstreetcn-hot"
-    name: "华尔街见闻"
-  - id: "thepaper"
-    name: "澎湃新闻"
-  - id: "bilibili-hot-search"
-    name: "bilibili 热搜"
-  - id: "cls-hot"
-    name: "财联社热门"
-  - id: "ifeng"
-    name: "凤凰网"
-  - id: "zhihu"
-    name: "知乎"
+platforms: []
 
 
 # ===============================================================
@@ -73,59 +61,9 @@ rss:
   feeds:
 
     # 新闻媒体 / 开源资讯
-    - id: "github-blog"
-      name: "GitHub Blog"
-      url: "https://github.blog/feed/"
-      filter_by_keywords: true
-
-    - id: "github-changelog"
-      name: "GitHub Changelog"
-      url: "https://github.blog/changelog/feed/"
-      filter_by_keywords: true
-
-    - id: "bbc-news"
-      name: "BBC News - Top Stories"
-      url: "https://feeds.bbci.co.uk/news/rss.xml"
-      filter_by_keywords: true
-
-    - id: "bbc-tech"
-      name: "BBC News - Technology"
-      url: "https://feeds.bbci.co.uk/news/technology/rss.xml"
-      filter_by_keywords: true
-
     - id: "zaobao-realtime"
       name: "联合早报 - Realtime"
       url: "https://www.zaobao.com.sg/rss/realtime.xml"
-      filter_by_keywords: true
-
-    - id: "reuters-top"
-      name: "Reuters - Top News"
-      url: "https://cdn.feedcontrol.net/8/1114-wioSIX3uu8MEj.xml"
-      filter_by_keywords: true
-
-    - id: "reuters-world"
-      name: "Reuters - World News"
-      url: "https://cdn.feedcontrol.net/8/1115-TvWAhu4G064WT.xml"
-      filter_by_keywords: true
-
-    - id: "washingtonpost-world"
-      name: "The Washington Post - World"
-      url: "https://feeds.washingtonpost.com/rss/world"
-      filter_by_keywords: true
-
-    - id: "washingtonpost-politics"
-      name: "The Washington Post - Politics"
-      url: "https://feeds.washingtonpost.com/rss/politics"
-      filter_by_keywords: true
-
-    - id: "xinhua-world"
-      name: "Xinhua - World"
-      url: "http://www.xinhuanet.com/english/rss/worldrss.xml"
-      filter_by_keywords: true
-
-    - id: "xinhua-sci-tech"
-      name: "Xinhua - Sci & Tech"
-      url: "http://www.xinhuanet.com/english/rss/scirss.xml"
       filter_by_keywords: true
 
     # OPML 导入（个人订阅源）
