@@ -599,7 +599,50 @@ class NewsAnalyzer:
         # 加载分析数据
         analysis_data = self._load_analysis_data()
         if not analysis_data:
-            return None
+            # 热榜为空时，如有 RSS 内容仍生成汇总并发送通知
+            has_rss_content = bool(rss_items) or bool(rss_new_items)
+            if not has_rss_content:
+                return None
+
+            print("热榜为空，但检测到 RSS 内容，继续生成汇总报告")
+
+            stats: List[Dict] = []
+            total_titles = 0
+            empty_new_titles: Dict = {}
+            empty_id_to_name: Dict = {}
+
+            html_file = None
+            if self.ctx.config["STORAGE"]["FORMATS"]["HTML"]:
+                html_file = self.ctx.generate_html(
+                    stats,
+                    total_titles,
+                    failed_ids=[],
+                    new_titles=empty_new_titles,
+                    id_to_name=empty_id_to_name,
+                    rss_stats=rss_items,
+                    rss_new_stats=rss_new_items,
+                    mode=mode_strategy["summary_mode"],
+                    is_daily_summary=True,
+                    update_info=self.update_info if self.ctx.config["SHOW_VERSION_UPDATE"] else None,
+                )
+
+            if html_file:
+                print(f"{summary_type}报告已生成: {html_file}")
+
+            # 发送通知（RSS-only 汇总）
+            self._send_notification_if_needed(
+                stats,
+                mode_strategy["summary_report_type"],
+                mode_strategy["summary_mode"],
+                failed_ids=[],
+                new_titles=empty_new_titles,
+                id_to_name=empty_id_to_name,
+                html_file_path=html_file,
+                rss_items=rss_items,
+                rss_new_items=rss_new_items,
+            )
+
+            return html_file
 
         all_results, id_to_name, title_info, new_titles, word_groups, filter_words, global_filters = (
             analysis_data
